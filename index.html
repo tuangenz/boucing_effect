@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bouncing Balls with Physics</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="menu">
+        <button>About Me</button>
+        <button>Nguyen Manh Tuan</button>
+        <button>View Portfolio</button>
+    </div>
+
+    
+    <h1>
+        <span style="text-align: center;">[ Interactive ]</span>
+        <br>
+        <span style="text-align: center; display: inline-block; margin-top: -10px;">UIUX Designer</span>
+    </h1>
+    
+    <div id="simulation"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <script>
+        const { Engine, Render, Runner, World, Bodies, Mouse, MouseConstraint, Events } = Matter;
+
+// Thiết lập vùng hiệu ứng
+const container = document.getElementById("simulation");
+const width = window.innerWidth;  // Lấy chiều rộng màn hình
+const height = window.innerHeight; // Lấy chiều cao màn hình
+
+// Khởi tạo Matter.js
+const engine = Engine.create();
+const world = engine.world;
+engine.world.gravity.y = 1;
+
+// Tạo renderer
+const render = Render.create({
+    element: container,
+    engine: engine,
+    options: { 
+        width: width, 
+        height: height, 
+        wireframes: false, 
+        background: "transparent",
+        pixelRatio: window.devicePixelRatio
+    }
+});
+Render.run(render);
+const runner = Runner.create();
+Runner.run(runner, engine);
+
+// Tạo biên giới
+const boundaries = [
+    Bodies.rectangle(width / 2, height + 10, width, 20, { isStatic: true }), // đáy
+    Bodies.rectangle(-10, height / 2, 20, height, { isStatic: true }), // trái
+    Bodies.rectangle(width + 10, height / 2, 20, height, { isStatic: true }), // phải
+    Bodies.rectangle(width / 2, -10, width, 20, { isStatic: true }) // trần
+];
+World.add(world, boundaries);
+
+// Tạo bóng
+const balls = [];
+const characters = ["{Ai}","{Ps}","{Id}","{Ae}","{Pr}","{Lr}","{Br}","{Fi}","{Au}","{En}","{Ch}","{Xd}  ",]; // Danh sách ký tự trên bóng
+const ballRadius = 120;
+for (let i = 0; i < 12; i++) {
+    let ball = Bodies.circle(
+        Math.random() * (width - 60) + 30,
+        Math.random() * (height / 2),ballRadius, // Bán kính bóng
+        {
+            restitution: 0.9,
+            friction: 0.1,
+            frictionAir: 0.01,
+            density: 0.04,
+            render: { 
+                fillStyle: "white",
+                text: {
+                    content: characters[i], // Lấy ký tự tương ứng
+                    size: 60,
+                    color: "black"
+                }
+            }
+        }
+    );
+    balls.push(ball);
+    World.add(world, ball);
+}
+
+// Thêm điều khiển chuột
+const mouse = Mouse.create(render.canvas);
+const mouseConstraint = MouseConstraint.create(engine, { 
+    mouse, 
+    constraint: { stiffness: 0.2, render: { visible: false } } 
+});
+World.add(world, mouseConstraint);
+
+// Ngăn bóng bị mất khi kéo nhanh
+Events.on(mouseConstraint, "enddrag", (event) => {
+    const body = event.body;
+    if (body) {
+        keepBallInside(body);
+    }
+});
+
+// Giữ bóng luôn trong vùng hiệu ứng
+Events.on(engine, "beforeUpdate", () => {
+    balls.forEach(keepBallInside);
+});
+
+// Hàm giới hạn bóng trong vùng hiệu ứng
+function keepBallInside(ball) {
+    const minX = ballRadius, maxX = width - ballRadius;
+    const minY = ballRadius, maxY = height - ballRadius;
+    
+    if (ball.position.x < minX || ball.position.x > maxX || 
+        ball.position.y < minY || ball.position.y > maxY) {
+        Matter.Body.setPosition(ball, {
+            x: Math.min(Math.max(ball.position.x, minX), maxX),
+            y: Math.min(Math.max(ball.position.y, minY), maxY)
+        });
+    }
+}
+
+window.addEventListener('resize', () => {
+    const newWidth = container.clientWidth;
+    render.canvas.width = newWidth;
+    render.canvas.height = 800;
+    render.options.width = newWidth;
+    render.options.height = 800;
+});
+
+
+// Hàm vẽ chữ lên canvas
+Render.lookAt(render, {
+    min: { x: 0, y: 0 },
+    max: { x: width, y: height }
+});
+
+(function renderText() {
+    const ctx = render.context;
+    ctx.font = "40px Space Grotesk";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    balls.forEach((ball, index) => {
+        ctx.fillStyle = "black";
+        ctx.fillText(characters[index], ball.position.x, ball.position.y);
+    });
+
+    requestAnimationFrame(renderText);
+})();
+    </script>
+
+    
+</body>
+</html>
