@@ -25,6 +25,7 @@ h1 {
     font-size: 230px;
     font-family: "Space Grotesk", serif;
     color: white;
+    opacity: 0.2;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
